@@ -1,0 +1,5 @@
+/.cache
+/xoxo-cli
+
+*.txt
+*.log
