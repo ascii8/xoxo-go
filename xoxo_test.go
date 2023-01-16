@@ -124,7 +124,7 @@ func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
 		t.Errorf("expected winner: %d, got: %d", winner, res.winner)
 	}
 	if !reflect.DeepEqual(res.cells, cells) {
-		t.Errorf("res.cells != cells:\n%v\n%v", res.cells, cells)
+		t.Errorf("expected cells:\n%v\ngot:\n%v", cells, res.cells)
 	}
 	<-time.After(1500 * time.Millisecond)
 }
