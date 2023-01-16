@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ascii8/nktest"
-	xoxogame "github.com/ascii8/xoxo-go/xoxo"
+	"github.com/ascii8/xoxo-go/xoxo"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -132,7 +132,7 @@ func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
 func runTestMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, res *matchResult) func() error {
 	r1, r2 := rand.New(rand.NewSource(s1)), rand.New(rand.NewSource(s2))
 	return func() error {
-		cl, err := xoxogame.Dial(ctx, xoxogame.WithURL(urlstr), xoxogame.WithLogf(t.Logf), xoxogame.WithDebug())
+		cl, err := xoxo.Dial(ctx, xoxo.WithURL(urlstr), xoxo.WithLogf(t.Logf), xoxo.WithDebug())
 		if err != nil {
 			return err
 		}
