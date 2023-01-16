@@ -1,9 +1,9 @@
 # About
 
-Contains a Go implementation of Tic-Tac-Toe, written for the Nakama game
-server. Includes a Nakama game module, end-to-end unit tests for the
-Tic-Tac-Toe game module, and a Ebitengine Tic-Tac-Toe game client, all written
-in Go.
+Contains a Go implementation of Tic-Tac-Toe (aka "xoxo"), written for the
+Nakama game server. Includes pure Go implementations of a Tic-Tac-Toe Nakama
+module, end-to-end unit tests for the module, and a Ebitengine client that
+works with the module.
 
 Showcases the end-to-end use of the
 [`github.com/ascii8/nakama-go`](https://github.com/ascii8/nakama-go) and
@@ -13,15 +13,15 @@ Showcases the end-to-end use of the
 
 An overview of the directories in this repository:
 
-* [nkxoxo](/nkxoxo) - a Nakama game module for Tic-Tac-Toe
-* [xoxo](/xoxo) - a Go Tic-Tac-Toe game client and game logic
+* [xoxo](/xoxo) - Tic-Tac-Toe game logic and client in Go
+* [nkxoxo](/nkxoxo) - a Tic-Tac-Toe Nakama module
 * [xoxo-cli](/cmd/xoxo-cli) - a non-interactive command-line client for Tic-Tac-Toe (randomly selects an available cell)
 * [ebxoxo](/ebxoxo) - a Ebitengine game client for Tic-Tac-Toe
 
-### Entry points
+#### Command/Module entry points
 
 * [cmd/nkxoxo](/cmd/nkxoxo) - the Nakama module entry point
-* [cmd/ebxoxo](/cmd/ebxoxo) - the Ebitengine game client entry point
+* [cmd/ebxoxo](/cmd/ebxoxo) - the Ebitengine client entry point
 
 ## Running the Unit Tests
 
@@ -37,11 +37,11 @@ $ DEBUG=1 go test -v
 
 ## Running the Module for use with Clients
 
-Checkout the code and run the module using `go test` from the repository root:
+Rrun the module using `go test` from the repository root:
 
 ```sh
-# get the code
-$ git clone https://github.com/ascii8/xoxo-go.git && cd xoxo-go
+# change to the repository root
+$ cd /path/to/xoxo-go
 
 # build/run the Nakama module with Nakama server
 $ DEBUG=1 KEEP=2h go test -v -timeout=2h -run TestKeep
@@ -52,8 +52,8 @@ $ DEBUG=1 KEEP=2h go test -v -timeout=2h -run TestKeep
 Build and run the Ebitengine client:
 
 ```sh
-# get the code
-$ git clone https://github.com/ascii8/xoxo-go.git && cd xoxo-go
+# change to the repository root
+$ cd /path/to/xoxo-go
 
 # build/run the Ebitengine client
 $ go build ./cmd/ebxoxo && ./ebxoxo
