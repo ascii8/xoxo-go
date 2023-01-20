@@ -9,6 +9,10 @@ Showcases the end-to-end use of the
 [`github.com/ascii8/nakama-go`](https://github.com/ascii8/nakama-go) and
 [`github.com/ascii8/nktest`](https://github.com/ascii8/nktest) packages.
 
+[![Tests](https://github.com/ascii8/xoxo-go/workflows/Test/badge.svg)](https://github.com/ascii8/xoxo-go/actions?query=workflow%3ATest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ascii8/xoxo-go)](https://goreportcard.com/report/github.com/ascii8/xoxo-go)
+[![Reference](https://pkg.go.dev/badge/github.com/ascii8/xoxo-go.svg )](https://pkg.go.dev/github.com/ascii8/xoxo-go)
+
 ## Overview
 
 An overview of the primary directories in this repository:
