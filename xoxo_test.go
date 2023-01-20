@@ -17,16 +17,15 @@ import (
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 	ctx = nktest.WithAlwaysPullFromEnv(ctx, "PULL")
+	ctx = nktest.WithUnderCIFromEnv(ctx, "CI")
 	ctx = nktest.WithHostPortMap(ctx)
-	nktest.Main(
-		ctx,
-		m,
+	var opts []nktest.BuildConfigOption
+	if os.Getenv("CI") == "" {
+		opts = append(opts, nktest.WithDefaultGoEnv(), nktest.WithDefaultGoVolumes())
+	}
+	nktest.Main(ctx, m,
 		nktest.WithDir("."),
-		nktest.WithBuildConfig(
-			"./cmd/nkxoxo",
-			nktest.WithDefaultGoEnv(),
-			nktest.WithDefaultGoVolumes(),
-		),
+		nktest.WithBuildConfig("./cmd/nkxoxo", opts...),
 	)
 }
 

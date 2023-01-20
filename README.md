@@ -1,9 +1,9 @@
 # About
 
-Contains a Go implementation of Tic-Tac-Toe (aka "xoxo"), written for the
+Contains a Go implementation of Tic-Tac-Toe (aka "XOXO"), written for the
 Nakama game server. Includes pure Go implementations of a Tic-Tac-Toe Nakama
-module, end-to-end unit tests for the module, and a Ebitengine client that
-works with the module.
+module, end-to-end unit tests for the Nakama module, and a Ebitengine client
+that works with the Nakama module.
 
 Showcases the end-to-end use of the
 [`github.com/ascii8/nakama-go`](https://github.com/ascii8/nakama-go) and
@@ -11,17 +11,17 @@ Showcases the end-to-end use of the
 
 ## Overview
 
-An overview of the directories in this repository:
+An overview of the primary directories in this repository:
 
 * [xoxo](/xoxo) - Tic-Tac-Toe game logic and client in Go
 * [nkxoxo](/nkxoxo) - a Tic-Tac-Toe Nakama module
-* [xoxo-cli](/cmd/xoxo-cli) - a non-interactive command-line client for Tic-Tac-Toe (randomly selects an available cell)
 * [ebxoxo](/ebxoxo) - a Ebitengine game client for Tic-Tac-Toe
 
 #### Command/Module entry points
 
 * [cmd/nkxoxo](/cmd/nkxoxo) - the Nakama module entry point
-* [cmd/ebxoxo](/cmd/ebxoxo) - the Ebitengine client entry point
+* [cmd/ebxoxo](/cmd/ebxoxo-client) - the Ebitengine client entry point
+* [xoxo-cli](/cmd/xoxo-cli) - a non-interactive command-line testing client
 
 ## Running the Unit Tests
 
@@ -47,17 +47,33 @@ $ cd /path/to/xoxo-go
 $ DEBUG=1 KEEP=2h go test -v -timeout=2h -run TestKeep
 ```
 
-## Using the Ebitengine client
+## Using the Ebitengine client (Desktop)
 
-Build and run the Ebitengine client:
+Build and run the Ebitengine client, as a Desktop client:
 
 ```sh
 # change to the repository root
 $ cd /path/to/xoxo-go
 
 # build/run the Ebitengine client
-$ go build ./cmd/ebxoxo && ./ebxoxo
+$ go build ./cmd/ebxoxo-client && ./ebxoxo-client
 ```
+
+## Using the Ebitengine client (WASM)
+
+Build and run the Ebitengine client as a WASM module in a Web Browser:
+
+```sh
+# change to the repository root
+$ cd /path/to/xoxo-go
+
+# build wasm and run local webserver
+$ go run github.com/hajimehoshi/wasmserve@latest ./cmd/ebxoxo-client
+```
+
+Then open [http://127.0.0.1:8080](http://127.0.0.1:8080) in a browser.
+
+See: [Ebitengine WASM documentation](https://ebitengine.org/en/documents/webassembly.html)
 
 ## Using the Defold client
 
@@ -91,3 +107,4 @@ $ DM_SERVICE_PORT=dynamic ./build/x86_64-linux/dmengine
 * [github.com/ascii8/nakama-go](https://github.com/ascii8/nakama-go) - a Nakama client for Go, with realtime WebSocket and WASM support
 * [github.com/ascii8/nktest](https://github.com/ascii8/nktest) - a Nakama module testing package for Go
 * [github.com/defold/game-xoxo-nakama-client](https://github.com/defold/game-xoxo-nakama-client.git) - a Nakama Tic-Tac-Toe client made with Defold
+* [github.com/defold/game-xoxo-nakama-server](https://github.com/defold/game-xoxo-nakama-server.git) - a Nakama Tic-Tac-Toe server (Lua)

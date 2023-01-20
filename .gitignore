@@ -1,5 +1,8 @@
 /.cache
 /xoxo-cli
+/xoxo-cli.exe
+/ebxoxo-client
+/ebxoxo-client.exe
 
 *.txt
 *.log
