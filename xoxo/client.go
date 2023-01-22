@@ -13,17 +13,25 @@ import (
 )
 
 type Client struct {
-	cl       *nakama.Client
-	conn     *nakama.Conn
-	debug    bool
-	userId   string
-	username string
-	logf     func(string, ...interface{})
+	cl                *nakama.Client
+	conn              *nakama.Conn
+	debug             bool
+	userId            string
+	username          string
+	logf              func(string, ...interface{})
+	persist           bool
+	backoffMax        time.Duration
+	backoffMin        time.Duration
+	backoffMultiplier float64
+
+	stop bool
+
 	ticketId string
 	matchId  string
 	state    *MatchState
 	waiting  bool
-	rw       sync.RWMutex
+
+	rw sync.RWMutex
 }
 
 func NewClient(opts ...Option) *Client {
@@ -32,8 +40,12 @@ func NewClient(opts ...Option) *Client {
 			nakama.WithURL("http://127.0.0.1:7352"),
 			nakama.WithServerKey("xoxo-go_server"),
 		),
-		logf:    func(string, ...interface{}) {},
-		waiting: true,
+		logf:              func(string, ...interface{}) {},
+		backoffMin:        20 * time.Millisecond,
+		backoffMax:        3 * time.Second,
+		backoffMultiplier: 1.2,
+		stop:              true,
+		waiting:           true,
 	}
 	for _, o := range opts {
 		o(cl)
@@ -42,30 +54,78 @@ func NewClient(opts ...Option) *Client {
 		nakama.WithTransport(&http.Transport{
 			DisableCompression: true,
 		})(cl.cl)
+		nakama.WithLogger(cl.logf)(cl.cl)
+	}
+	if cl.userId == "" {
+		cl.userId = uuid.New().String()
+	}
+	if cl.username == "" {
+		cl.username = xid.New().String()
 	}
 	return cl
 }
 
 func Dial(ctx context.Context, opts ...Option) (*Client, error) {
 	cl := NewClient(opts...)
-	if err := cl.Run(ctx); err != nil {
+	if err := cl.Open(ctx); err != nil {
 		return nil, err
 	}
 	return cl, nil
 }
 
-func (cl *Client) Run(ctx context.Context) error {
-	userId, username := cl.userId, cl.username
-	if userId == "" {
-		userId = uuid.New().String()
+func (cl *Client) Connected() bool {
+	conn := cl.conn
+	return conn != nil && conn.Connected()
+}
+
+func (cl *Client) Open(ctx context.Context) error {
+	if cl.Connected() {
+		return nil
 	}
-	if username == "" {
-		username = xid.New().String()
+	cl.rw.Lock()
+	cl.stop = false
+	cl.rw.Unlock()
+	if !cl.persist {
+		return cl.open(ctx)
 	}
-	if err := cl.cl.AuthenticateDevice(ctx, userId, true, username); err != nil {
+	go cl.run(ctx)
+	return nil
+}
+
+func (cl *Client) run(ctx context.Context) {
+	for d, last := cl.backoffMin, true; !cl.stop; d = min(time.Duration(float64(d)*cl.backoffMultiplier), cl.backoffMax) {
+		connected := cl.conn != nil
+		if last != connected {
+			d = cl.backoffMin
+		}
+		last = connected
+		if connected {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(d):
+				continue
+			}
+		}
+		if err := cl.open(ctx); err == nil {
+			continue
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(d):
+		}
+	}
+}
+
+func (cl *Client) open(ctx context.Context) error {
+	if err := cl.cl.AuthenticateDevice(ctx, cl.userId, true, cl.username); err != nil {
 		return fmt.Errorf("unable to authenticate device: %w", err)
 	}
-	opts := []nakama.ConnOption{nakama.WithConnHandler(cl)}
+	opts := []nakama.ConnOption{
+		nakama.WithConnHandler(cl),
+		nakama.WithConnPersist(cl.persist),
+	}
 	if cl.debug {
 		opts = append(opts, nakama.WithConnFormat("json"))
 	}
@@ -73,18 +133,21 @@ func (cl *Client) Run(ctx context.Context) error {
 	if cl.conn, err = cl.cl.NewConn(ctx, opts...); err != nil {
 		return fmt.Errorf("unable to open websocket connection: %w", err)
 	}
-	go func() {
-		select {
-		case <-ctx.Done():
-			cl.conn.Close()
-		}
-	}()
+	return nil
+}
+
+func (cl *Client) Close() error {
+	_ = cl.Leave(context.Background())
+	cl.rw.Lock()
+	defer cl.rw.Unlock()
+	if cl.conn != nil {
+		_ = cl.conn.Close()
+	}
+	cl.state, cl.stop = nil, true
 	return nil
 }
 
 func (cl *Client) State() *MatchState {
-	cl.rw.RLock()
-	defer cl.rw.RUnlock()
 	return cl.state
 }
 
@@ -93,10 +156,7 @@ func (cl *Client) Ready(ctx context.Context) bool {
 	go func() {
 		defer close(ch)
 		for {
-			cl.rw.Lock()
-			state := cl.state
-			cl.rw.Unlock()
-			if state != nil && state.State.RematchCountdown == 0 {
+			if state := cl.state; state != nil && state.State.RematchCountdown == 0 {
 				ch <- true
 				return
 			}
@@ -120,9 +180,9 @@ func (cl *Client) Next(ctx context.Context) bool {
 	go func() {
 		defer close(ch)
 		for {
-			cl.rw.Lock()
+			cl.rw.RLock()
 			waiting, state := cl.waiting, cl.state
-			cl.rw.Unlock()
+			cl.rw.RUnlock()
 			switch {
 			case waiting || state == nil:
 			case state.State.RematchCountdown != 0:
@@ -134,7 +194,7 @@ func (cl *Client) Next(ctx context.Context) bool {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(50 * time.Millisecond):
+			case <-time.After(1 * time.Second):
 			}
 		}
 	}()
@@ -144,6 +204,14 @@ func (cl *Client) Next(ctx context.Context) bool {
 	case res := <-ch:
 		return res
 	}
+}
+
+func (cl *Client) ConnectHandler(ctx context.Context) {
+	cl.logf("Connect!")
+}
+
+func (cl *Client) DisconnectHandler(ctx context.Context, err error) {
+	cl.logf("Disconnect: %v", err)
 }
 
 func (cl *Client) ErrorHandler(ctx context.Context, msg *nakama.ErrorMsg) {
@@ -160,17 +228,14 @@ func (cl *Client) ChannelPresenceEventHandler(ctx context.Context, msg *nakama.C
 
 func (cl *Client) MatchDataHandler(ctx context.Context, msg *nakama.MatchDataMsg) {
 	cl.logf("MatchData: %+v", msg)
-	var state MatchState
+	state := new(MatchState)
 	if err := state.Unmarshal(msg.Data); err != nil {
 		cl.logf("unable to unmarshal MatchData: %v", err)
-		cl.rw.Lock()
-		defer cl.rw.Unlock()
-		cl.state, cl.waiting = nil, true
-		return
+		state = nil
 	}
 	cl.rw.Lock()
 	defer cl.rw.Unlock()
-	cl.state, cl.waiting = &state, false
+	cl.waiting, cl.state = state == nil, state
 }
 
 func (cl *Client) MatchPresenceEventHandler(ctx context.Context, msg *nakama.MatchPresenceEventMsg) {
@@ -229,15 +294,15 @@ func (cl *Client) Join(ctx context.Context) error {
 
 func (cl *Client) Leave(ctx context.Context) error {
 	cl.logf("Leave: leaving match")
-	cl.rw.RLock()
-	defer cl.rw.RUnlock()
+	cl.rw.Lock()
+	defer cl.rw.Unlock()
 	if cl.ticketId != "" {
 		cl.conn.MatchmakerRemoveAsync(ctx, cl.ticketId, nil)
 	}
 	if cl.matchId != "" {
 		cl.conn.MatchLeaveAsync(ctx, cl.matchId, nil)
 	}
-	cl.ticketId, cl.matchId = "", ""
+	cl.ticketId, cl.matchId, cl.waiting, cl.state = "", "", true, nil
 	return nil
 }
 
@@ -295,4 +360,17 @@ func WithDebug() Option {
 	return func(cl *Client) {
 		cl.debug = true
 	}
+}
+
+func WithPersist() Option {
+	return func(cl *Client) {
+		cl.persist = true
+	}
+}
+
+func min(a, b time.Duration) time.Duration {
+	if a < b {
+		return a
+	}
+	return b
 }

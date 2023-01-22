@@ -113,12 +113,14 @@ func (s *State) String() string {
 			v[i*3+j] = getCellAsRune(i, j, s.Cells)
 		}
 	}
+	var str string
 	switch {
 	case s.Winner != 0:
-		v = append(v, fmt.Sprintf(" (completed, winner: %d)", s.Winner))
+		str = fmt.Sprintf(" (winner: %d)", s.Winner)
 	case s.Draw:
-		v = append(v, " (completed, draw)")
+		str = " (draw)"
 	}
+	v = append(v, str)
 	return fmt.Sprintf("[%c%c%c,%c%c%c,%c%c%c]%s", v...)
 }
 
