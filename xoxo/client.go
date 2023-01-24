@@ -13,18 +13,13 @@ import (
 )
 
 type Client struct {
-	cl                *nakama.Client
-	conn              *nakama.Conn
-	debug             bool
-	userId            string
-	username          string
-	logf              func(string, ...interface{})
-	persist           bool
-	backoffMax        time.Duration
-	backoffMin        time.Duration
-	backoffMultiplier float64
-
-	stop bool
+	cl       *nakama.Client
+	conn     *nakama.Conn
+	debug    bool
+	userId   string
+	username string
+	logf     func(string, ...interface{})
+	persist  bool
 
 	ticketId string
 	matchId  string
@@ -36,17 +31,14 @@ type Client struct {
 
 func NewClient(opts ...Option) *Client {
 	cl := &Client{
-		cl: nakama.New(
-			nakama.WithURL("http://127.0.0.1:7352"),
-			nakama.WithServerKey("xoxo-go_server"),
-		),
-		logf:              func(string, ...interface{}) {},
-		backoffMin:        20 * time.Millisecond,
-		backoffMax:        3 * time.Second,
-		backoffMultiplier: 1.2,
-		stop:              true,
-		waiting:           true,
+		logf:    func(string, ...interface{}) {},
+		waiting: true,
 	}
+	cl.cl = nakama.New(
+		nakama.WithURL("http://127.0.0.1:7352"),
+		nakama.WithServerKey("xoxo-go_server"),
+		nakama.WithAuthHandler(cl),
+	)
 	for _, o := range opts {
 		o(cl)
 	}
@@ -73,65 +65,21 @@ func Dial(ctx context.Context, opts ...Option) (*Client, error) {
 	return cl, nil
 }
 
-func (cl *Client) Connected() bool {
-	conn := cl.conn
-	return conn != nil && conn.Connected()
-}
-
 func (cl *Client) Open(ctx context.Context) error {
-	if cl.Connected() {
-		return nil
-	}
-	cl.rw.Lock()
-	cl.stop = false
-	cl.rw.Unlock()
-	if !cl.persist {
-		return cl.open(ctx)
-	}
-	go cl.run(ctx)
-	return nil
-}
-
-func (cl *Client) run(ctx context.Context) {
-	for d, last := cl.backoffMin, true; !cl.stop; d = min(time.Duration(float64(d)*cl.backoffMultiplier), cl.backoffMax) {
-		connected := cl.conn != nil
-		if last != connected {
-			d = cl.backoffMin
+	conn := cl.conn
+	if conn == nil {
+		opts := []nakama.ConnOption{
+			nakama.WithConnHandler(cl),
+			nakama.WithConnPersist(cl.persist),
 		}
-		last = connected
-		if connected {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(d):
-				continue
-			}
+		if cl.debug {
+			opts = append(opts, nakama.WithConnFormat("json"))
 		}
-		if err := cl.open(ctx); err == nil {
-			continue
+		var err error
+		if conn, err = cl.cl.NewConn(ctx, opts...); err != nil {
+			return err
 		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(d):
-		}
-	}
-}
-
-func (cl *Client) open(ctx context.Context) error {
-	if err := cl.cl.AuthenticateDevice(ctx, cl.userId, true, cl.username); err != nil {
-		return fmt.Errorf("unable to authenticate device: %w", err)
-	}
-	opts := []nakama.ConnOption{
-		nakama.WithConnHandler(cl),
-		nakama.WithConnPersist(cl.persist),
-	}
-	if cl.debug {
-		opts = append(opts, nakama.WithConnFormat("json"))
-	}
-	var err error
-	if cl.conn, err = cl.cl.NewConn(ctx, opts...); err != nil {
-		return fmt.Errorf("unable to open websocket connection: %w", err)
+		cl.conn = conn
 	}
 	return nil
 }
@@ -141,10 +89,15 @@ func (cl *Client) Close() error {
 	cl.rw.Lock()
 	defer cl.rw.Unlock()
 	if cl.conn != nil {
-		_ = cl.conn.Close()
+		_ = cl.conn.CloseWithStopErr(true, nil)
 	}
-	cl.state, cl.stop = nil, true
+	cl.state = nil
 	return nil
+}
+
+func (cl *Client) Connected() bool {
+	conn := cl.conn
+	return conn != nil && conn.Connected()
 }
 
 func (cl *Client) State() *MatchState {
@@ -204,6 +157,10 @@ func (cl *Client) Next(ctx context.Context) bool {
 	case res := <-ch:
 		return res
 	}
+}
+
+func (cl *Client) AuthHandler(ctx context.Context, nakamaClient *nakama.Client) error {
+	return nakamaClient.AuthenticateDevice(ctx, cl.userId, true, cl.username)
 }
 
 func (cl *Client) ConnectHandler(ctx context.Context) {

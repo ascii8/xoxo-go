@@ -3,7 +3,7 @@ module github.com/ascii8/xoxo-go
 go 1.19
 
 require (
-	github.com/ascii8/nakama-go v0.4.7
+	github.com/ascii8/nakama-go v0.5.0
 	github.com/ascii8/nktest v0.9.8
 	github.com/google/uuid v1.3.0
 	github.com/hajimehoshi/ebiten/v2 v2.5.0-alpha.11.0.20230114170847-f17be388b2fe
