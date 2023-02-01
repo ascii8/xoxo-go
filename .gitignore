@@ -1,8 +1,10 @@
 /.cache
-/xoxo-cli
-/xoxo-cli.exe
-/ebxoxo-client
-/ebxoxo-client.exe
+/nkclient
+/ebclient
+/fyneclient
+/gioclient
+/cmd/fyneclient/wasm
 
+*.exe
 *.txt
 *.log

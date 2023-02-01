@@ -20,12 +20,16 @@ An overview of the primary directories in this repository:
 * [xoxo](/xoxo) - Tic-Tac-Toe game logic and client in Go
 * [nkxoxo](/nkxoxo) - a Tic-Tac-Toe Nakama module
 * [ebxoxo](/ebxoxo) - a Ebitengine game client for Tic-Tac-Toe
+* [fynexoxo](/fynexoxo) - a Fyne UI game client for Tic-Tac-Toe
+* [gioxoxo](/gioxoxo) - a Gio UI game client for Tic-Tac-Toe
 
 #### Command/Module entry points
 
-* [cmd/nkxoxo](/cmd/nkxoxo) - the Nakama module entry point
-* [cmd/ebxoxo](/cmd/ebxoxo-client) - the Ebitengine client entry point
-* [xoxo-cli](/cmd/xoxo-cli) - a non-interactive command-line testing client
+* [cmd/nkxoxo](/cmd/nkxoxo) - the Nakama server module entry point
+* [cmd/nkclient](/cmd/nkclient) - the testing client
+* [cmd/ebclient](/cmd/ebclient) - the Ebitengine client entry point
+* [cmd/fyneclient](/cmd/fyneclient) - the Fyne UI client entry point
+* [cmd/gioclient](/cmd/gioclient) - the Gio UI client entry point
 
 ## Running the Unit Tests
 
@@ -60,7 +64,7 @@ Build and run the Ebitengine client, as a Desktop client:
 $ cd /path/to/xoxo-go
 
 # build/run the Ebitengine client
-$ go build ./cmd/ebxoxo-client && ./ebxoxo-client
+$ go build ./cmd/ebclient && ./ebclient
 ```
 
 ## Using the Ebitengine client (WASM)
@@ -72,12 +76,41 @@ Build and run the Ebitengine client as a WASM module in a Web Browser:
 $ cd /path/to/xoxo-go
 
 # build wasm and run local webserver
-$ go run github.com/hajimehoshi/wasmserve@latest ./cmd/ebxoxo-client
+$ go run github.com/hajimehoshi/wasmserve@latest ./cmd/ebclient
 ```
 
 Then open [http://127.0.0.1:8080](http://127.0.0.1:8080) in a browser.
 
 See: [Ebitengine WASM documentation](https://ebitengine.org/en/documents/webassembly.html)
+
+## Using the Fyne client (Desktop)
+
+Build and run the Fyne client, as a Desktop client:
+
+```sh
+# change to the repository root
+$ cd /path/to/xoxo-go
+
+# build/run the Fyne client
+$ go build ./cmd/fyneclient && ./fyneclient
+```
+
+## Using the Fyne client (WASM)
+
+Build and run the Fyne client, as a Desktop client:
+
+```sh
+# install fyne build tool
+$ go install fyne.io/fyne/v2/cmd/fyne@latest
+
+# change to the repository's cmd/fyneclient directory
+$ cd /path/to/xoxo-go/cmd/fyneclient
+
+# build/run the Fyne client
+$ fyne serve --port 8080 --target wasm
+```
+
+Then open [http://127.0.0.1:8080](http://127.0.0.1:8080) in a browser.
 
 ## Using the Defold client
 

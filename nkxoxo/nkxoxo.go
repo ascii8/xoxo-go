@@ -89,16 +89,28 @@ func (m match) MatchLeave(ctx context.Context, logger runtime.Logger, db *sql.DB
 	logger.
 		WithField("tick", tick).
 		Debug("MatchLeave")
-	return nil
+	s := state.(*matchState)
+	if err := s.broadcastState(logger, dispatcher); err != nil {
+		logger.
+			WithField("tick", tick).
+			WithField("error", err).
+			Debug("MatchJoin unable to broadcast state")
+	}
+	s.termTick = tick
+	return s
 }
 
 func (m match) MatchLoop(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, messages []runtime.MatchData) interface{} {
 	s := state.(*matchState)
 	l := logger.WithField("tick", tick)
-	if len(s.presences) != 2 {
+	switch {
+	case len(s.presences) != 2 && s.termTick == 0:
 		l.
 			Debug("MatchLoop waiting for players")
 		return s
+	case s.termTick != 0 && tick-5 > s.termTick:
+		l.Debug("MatchLoop terminating")
+		return nil
 	}
 	for _, m := range messages {
 		data, userId := m.GetData(), m.GetUserId()
@@ -117,6 +129,7 @@ func (m match) MatchLoop(ctx context.Context, logger runtime.Logger, db *sql.DB,
 			}
 			l = l.WithField("move", move)
 			l.
+				WithField("state", s.state.String()).
 				Debug("MatchLoop move")
 			if err := s.state.Move(userId, move); err != nil {
 				l.
@@ -162,6 +175,7 @@ func (m match) MatchSignal(ctx context.Context, logger runtime.Logger, db *sql.D
 type matchState struct {
 	state     *xoxo.State
 	presences []runtime.Presence
+	termTick  int64
 }
 
 func newMatchState() *matchState {
@@ -215,6 +229,9 @@ func (s *matchState) broadcastState(logger runtime.Logger, dispatcher runtime.Ma
 	if len(s.presences) != 2 {
 		return fmt.Errorf("invalid presences length %d", len(s.presences))
 	}
+	logger.
+		WithField("state", s.state.String()).
+		Debug("broadcast state")
 	active, other := &s.state.Players[0], &s.state.Players[1]
 	if s.state.PlayerTurn == 2 {
 		active, other = other, active

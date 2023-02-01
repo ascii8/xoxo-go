@@ -60,11 +60,17 @@ func (s *State) Move(userId string, move Move) error {
 	row, col := move.Row-1, move.Col-1
 	switch {
 	case row < 0 || 3 <= row:
-		return fmt.Errorf("invalid row %d", row)
+		return fmt.Errorf("invalid row %d (%d)", move.Row, row)
 	case col < 0 || 3 <= col:
-		return fmt.Errorf("invalid col %d", col)
+		return fmt.Errorf("invalid col %d (%d)", move.Col, col)
 	case s.Cells[row][col] != -1:
-		return fmt.Errorf("invalid move at row %d, col %d", row, col)
+		return fmt.Errorf("invalid move at row %d, col %d (%d, %d)", move.Row, move.Col, row, col)
+	case s.Winner != 0:
+		return fmt.Errorf("match already won by player %d", s.Winner)
+	case s.Draw:
+		return fmt.Errorf("match is a draw")
+	case s.PlayerTurn != 1 && s.PlayerTurn != 2:
+		return fmt.Errorf("invalid player turn")
 	}
 	i, found := 0, false
 	for ; i < len(s.Players); i++ {
@@ -73,21 +79,25 @@ func (s *State) Move(userId string, move Move) error {
 			break
 		}
 	}
-	if !found {
+	player := i + 1
+	switch {
+	case !found:
 		return fmt.Errorf("unable to locate player with user id %q", userId)
+	case s.PlayerTurn != player:
+		return fmt.Errorf("it is not player %d's turn, it is player %d's turn", player, s.PlayerTurn)
 	}
 	// do move
-	s.Cells[row][col] = i + 1
-	switch s.PlayerTurn {
+	switch player {
 	case 1:
 		s.PlayerTurn = 2
 	case 2:
 		s.PlayerTurn = 1
 	default:
-		return fmt.Errorf("invalid PlayerTurn %d", s.PlayerTurn)
+		return fmt.Errorf("invalid PlayerTurn %d (%d)", s.PlayerTurn, player)
 	}
+	s.Cells[row][col] = player
+	s.Winner, s.Draw = 0, false
 	// determine if there is a winner
-	s.Winner = 0
 loop:
 	for p := 1; p <= 2; p++ {
 		for i := 0; i < 8; i++ {
@@ -97,11 +107,16 @@ loop:
 			}
 		}
 	}
-	s.Draw = true
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
-			s.Draw = s.Draw && s.Cells[i][j] != -1
+	// check draw
+	if s.Winner == 0 {
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 3; j++ {
+				s.Draw = s.Draw && s.Cells[i][j] != -1
+			}
 		}
+	}
+	if s.Winner != 0 || s.Draw {
+		s.PlayerTurn = -1
 	}
 	return nil
 }
@@ -121,15 +136,26 @@ func (s *State) String() string {
 		str = " (draw)"
 	}
 	v = append(v, str)
-	return fmt.Sprintf("[%c%c%c,%c%c%c,%c%c%c]%s", v...)
+	p1, p2 := "(nil)", "(nil)"
+	if len(s.Players) > 0 {
+		p1 = s.Players[0].UserId
+	}
+	if len(s.Players) > 1 {
+		p2 = s.Players[1].UserId
+	}
+	return fmt.Sprintf("<1: %s, 2: %s, turn: %d [%c%c%c,%c%c%c,%c%c%c]%s>", append([]interface{}{
+		p1,
+		p2,
+		s.PlayerTurn,
+	}, v...)...)
 }
 
 func getCellAsRune(i, j int, cells [][]int) rune {
 	switch cells[i][j] {
 	case 1:
-		return 'X'
-	case 2:
 		return 'O'
+	case 2:
+		return 'X'
 	}
 	return '.'
 }

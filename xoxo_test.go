@@ -111,8 +111,8 @@ func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
 	t.Logf("proxy: %s", urlstr)
 	res := new(matchResult)
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(runTestMatch(t, ctx, s1, s2, urlstr, res))
-	eg.Go(runTestMatch(t, ctx, s1, s2, urlstr, nil))
+	eg.Go(testMatch(t, ctx, s1, s2, urlstr, res))
+	eg.Go(testMatch(t, ctx, s1, s2, urlstr, nil))
 	if err := eg.Wait(); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -128,7 +128,7 @@ func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
 	<-time.After(1500 * time.Millisecond)
 }
 
-func runTestMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, res *matchResult) func() error {
+func testMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, res *matchResult) func() error {
 	r1, r2 := rand.New(rand.NewSource(s1)), rand.New(rand.NewSource(s2))
 	return func() error {
 		cl, err := xoxo.Dial(ctx, xoxo.WithURL(urlstr), xoxo.WithLogf(t.Logf), xoxo.WithDebug())

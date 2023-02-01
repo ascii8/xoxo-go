@@ -27,6 +27,20 @@ type Client struct {
 	waiting  bool
 
 	rw sync.RWMutex
+
+	connectHandler              func(context.Context)
+	disconnectHandler           func(context.Context, error)
+	errorHandler                func(context.Context, *nakama.ErrorMsg)
+	channelMessageHandler       func(context.Context, *nakama.ChannelMessageMsg)
+	channelPresenceEventHandler func(context.Context, *nakama.ChannelPresenceEventMsg)
+	matchDataHandler            func(context.Context, *nakama.MatchDataMsg)
+	matchPresenceEventHandler   func(context.Context, *nakama.MatchPresenceEventMsg)
+	matchmakerMatchedHandler    func(context.Context, *nakama.MatchmakerMatchedMsg)
+	notificationsHandler        func(context.Context, *nakama.NotificationsMsg)
+	statusPresenceEventHandler  func(context.Context, *nakama.StatusPresenceEventMsg)
+	streamDataHandler           func(context.Context, *nakama.StreamDataMsg)
+	streamPresenceEventHandler  func(context.Context, *nakama.StreamPresenceEventMsg)
+	stateHandler                func(context.Context)
 }
 
 func NewClient(opts ...Option) *Client {
@@ -104,6 +118,10 @@ func (cl *Client) State() *MatchState {
 	return cl.state
 }
 
+func (cl *Client) MatchId() string {
+	return cl.matchId
+}
+
 func (cl *Client) Ready(ctx context.Context) bool {
 	ch := make(chan bool, 1)
 	go func() {
@@ -165,22 +183,37 @@ func (cl *Client) AuthHandler(ctx context.Context, nakamaClient *nakama.Client) 
 
 func (cl *Client) ConnectHandler(ctx context.Context) {
 	cl.logf("Connect!")
+	if cl.connectHandler != nil {
+		cl.connectHandler(ctx)
+	}
 }
 
 func (cl *Client) DisconnectHandler(ctx context.Context, err error) {
 	cl.logf("Disconnect: %v", err)
+	if cl.disconnectHandler != nil {
+		cl.disconnectHandler(ctx, err)
+	}
 }
 
 func (cl *Client) ErrorHandler(ctx context.Context, msg *nakama.ErrorMsg) {
 	cl.logf("ErrorHandler: %+v", msg)
+	if cl.errorHandler != nil {
+		cl.errorHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) ChannelMessageHandler(ctx context.Context, msg *nakama.ChannelMessageMsg) {
 	cl.logf("ChannelMessage: %+v", msg)
+	if cl.channelMessageHandler != nil {
+		cl.channelMessageHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) ChannelPresenceEventHandler(ctx context.Context, msg *nakama.ChannelPresenceEventMsg) {
 	cl.logf("ChannelPresenceEvent: %+v", msg)
+	if cl.channelPresenceEventHandler != nil {
+		cl.channelPresenceEventHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) MatchDataHandler(ctx context.Context, msg *nakama.MatchDataMsg) {
@@ -192,11 +225,38 @@ func (cl *Client) MatchDataHandler(ctx context.Context, msg *nakama.MatchDataMsg
 	}
 	cl.rw.Lock()
 	defer cl.rw.Unlock()
+	prev := cl.state
 	cl.waiting, cl.state = state == nil, state
+	if cl.matchDataHandler != nil {
+		cl.matchDataHandler(ctx, msg)
+	}
+	if cl.stateHandler == nil {
+		return
+	}
+	switch {
+	case prev == nil && state != nil,
+		prev != nil && state == nil,
+		prev.YourTurn != state.YourTurn,
+		prev.State.RematchCountdown != state.State.RematchCountdown,
+		state.State.Winner != 0,
+		state.State.Draw:
+		cl.stateHandler(ctx)
+	}
 }
 
 func (cl *Client) MatchPresenceEventHandler(ctx context.Context, msg *nakama.MatchPresenceEventMsg) {
 	cl.logf("MatchPresenceEvent: %+v", msg)
+	if len(msg.Leaves) != 0 {
+		cl.rw.Lock()
+		cl.state = nil
+		cl.rw.Unlock()
+		if cl.stateHandler != nil {
+			cl.stateHandler(ctx)
+		}
+	}
+	if cl.matchPresenceEventHandler != nil {
+		cl.matchPresenceEventHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) MatchmakerMatchedHandler(ctx context.Context, msg *nakama.MatchmakerMatchedMsg) {
@@ -214,26 +274,44 @@ func (cl *Client) MatchmakerMatchedHandler(ctx context.Context, msg *nakama.Matc
 			cl.logf("MatchmakerMatched: joined match %q", cl.matchId)
 		}
 	})
+	if cl.matchmakerMatchedHandler != nil {
+		cl.matchmakerMatchedHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) NotificationsHandler(ctx context.Context, msg *nakama.NotificationsMsg) {
 	cl.logf("Notifications: %+v", msg)
+	if cl.notificationsHandler != nil {
+		cl.notificationsHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) StatusPresenceEventHandler(ctx context.Context, msg *nakama.StatusPresenceEventMsg) {
 	cl.logf("StatusPresenceEvent: %+v", msg)
+	if cl.statusPresenceEventHandler != nil {
+		cl.statusPresenceEventHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) StreamDataHandler(ctx context.Context, msg *nakama.StreamDataMsg) {
 	cl.logf("StreamData: %+v", msg)
+	if cl.streamDataHandler != nil {
+		cl.streamDataHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) StreamPresenceEventHandler(ctx context.Context, msg *nakama.StreamPresenceEventMsg) {
-	cl.logf("StreamPresence: %+v", msg)
+	cl.logf("StreamPresenceEvent: %+v", msg)
+	if cl.streamPresenceEventHandler != nil {
+		cl.streamPresenceEventHandler(ctx, msg)
+	}
 }
 
 func (cl *Client) Join(ctx context.Context) error {
 	cl.logf("Join: joining match")
+	if cl.ticketId != "" {
+		return fmt.Errorf("waiting matchmaker %s", cl.ticketId)
+	}
 	cl.conn.MatchmakerAddAsync(ctx, nakama.MatchmakerAdd("*", 2, 2), func(msg *nakama.MatchmakerTicketMsg, err error) {
 		switch {
 		case err != nil:
@@ -325,9 +403,72 @@ func WithPersist() Option {
 	}
 }
 
-func min(a, b time.Duration) time.Duration {
-	if a < b {
-		return a
+func WithHandler(handler nakama.ConnHandler) Option {
+	return func(cl *Client) {
+		if x, ok := handler.(interface {
+			ConnectHandler(context.Context)
+		}); ok {
+			cl.connectHandler = x.ConnectHandler
+		}
+		if x, ok := handler.(interface {
+			DisconnectHandler(context.Context, error)
+		}); ok {
+			cl.disconnectHandler = x.DisconnectHandler
+		}
+		if x, ok := handler.(interface {
+			ErrorHandler(context.Context, *nakama.ErrorMsg)
+		}); ok {
+			cl.errorHandler = x.ErrorHandler
+		}
+		if x, ok := handler.(interface {
+			ChannelMessageHandler(context.Context, *nakama.ChannelMessageMsg)
+		}); ok {
+			cl.channelMessageHandler = x.ChannelMessageHandler
+		}
+		if x, ok := handler.(interface {
+			ChannelPresenceEventHandler(context.Context, *nakama.ChannelPresenceEventMsg)
+		}); ok {
+			cl.channelPresenceEventHandler = x.ChannelPresenceEventHandler
+		}
+		if x, ok := handler.(interface {
+			MatchDataHandler(context.Context, *nakama.MatchDataMsg)
+		}); ok {
+			cl.matchDataHandler = x.MatchDataHandler
+		}
+		if x, ok := handler.(interface {
+			MatchPresenceEventHandler(context.Context, *nakama.MatchPresenceEventMsg)
+		}); ok {
+			cl.matchPresenceEventHandler = x.MatchPresenceEventHandler
+		}
+		if x, ok := handler.(interface {
+			MatchmakerMatchedHandler(context.Context, *nakama.MatchmakerMatchedMsg)
+		}); ok {
+			cl.matchmakerMatchedHandler = x.MatchmakerMatchedHandler
+		}
+		if x, ok := handler.(interface {
+			NotificationsHandler(context.Context, *nakama.NotificationsMsg)
+		}); ok {
+			cl.notificationsHandler = x.NotificationsHandler
+		}
+		if x, ok := handler.(interface {
+			StatusPresenceEventHandler(context.Context, *nakama.StatusPresenceEventMsg)
+		}); ok {
+			cl.statusPresenceEventHandler = x.StatusPresenceEventHandler
+		}
+		if x, ok := handler.(interface {
+			StreamDataHandler(context.Context, *nakama.StreamDataMsg)
+		}); ok {
+			cl.streamDataHandler = x.StreamDataHandler
+		}
+		if x, ok := handler.(interface {
+			StreamPresenceEventHandler(context.Context, *nakama.StreamPresenceEventMsg)
+		}); ok {
+			cl.streamPresenceEventHandler = x.StreamPresenceEventHandler
+		}
+		if x, ok := handler.(interface {
+			StateHandler(context.Context)
+		}); ok {
+			cl.stateHandler = x.StateHandler
+		}
 	}
-	return b
 }
