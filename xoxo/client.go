@@ -156,7 +156,9 @@ func (cl *Client) Next(ctx context.Context) bool {
 			cl.rw.RUnlock()
 			switch {
 			case waiting || state == nil:
-			case state.State.RematchCountdown != 0:
+			case state.State.Winner != 0,
+				state.State.Draw,
+				state.State.RematchCountdown != 0:
 				return
 			case state.YourTurn:
 				ch <- true
@@ -165,7 +167,7 @@ func (cl *Client) Next(ctx context.Context) bool {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(1 * time.Second):
+			case <-time.After(50 * time.Millisecond):
 			}
 		}
 	}()
@@ -327,6 +329,14 @@ func (cl *Client) Join(ctx context.Context) error {
 	return nil
 }
 
+func (cl *Client) JoinAsync(ctx context.Context, f func(error)) {
+	go func() {
+		if err := cl.Join(ctx); f != nil {
+			f(err)
+		}
+	}()
+}
+
 func (cl *Client) Leave(ctx context.Context) error {
 	cl.logf("Leave: leaving match")
 	cl.rw.Lock()
@@ -339,6 +349,14 @@ func (cl *Client) Leave(ctx context.Context) error {
 	}
 	cl.ticketId, cl.matchId, cl.waiting, cl.state = "", "", true, nil
 	return nil
+}
+
+func (cl *Client) LeaveAsync(ctx context.Context, f func(error)) {
+	go func() {
+		if err := cl.Leave(ctx); f != nil {
+			f(err)
+		}
+	}()
 }
 
 func (cl *Client) Move(ctx context.Context, row, col int) error {
@@ -357,6 +375,14 @@ func (cl *Client) Move(ctx context.Context, row, col int) error {
 	defer cl.rw.Unlock()
 	cl.waiting = true
 	return cl.conn.MatchDataSend(ctx, matchId, OpCodeMove, data, true, nil)
+}
+
+func (cl *Client) MoveAsync(ctx context.Context, row, col int, f func(error)) {
+	go func() {
+		if err := cl.Move(ctx, row, col); f != nil {
+			f(err)
+		}
+	}()
 }
 
 type Option func(*Client)

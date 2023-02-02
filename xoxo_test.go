@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -57,49 +58,69 @@ func TestKeep(t *testing.T) {
 	}
 }
 
-func TestMatch(t *testing.T) {
-	tests := []struct {
-		seed   int64
-		draw   bool
-		winner int
-		cells  []int
-	}{
-		{102, false, 1, []int{
-			-1, 2, 1,
-			2, 1, -1,
-			1, 1, 2,
-		}},
-		{200, true, 0, []int{
-			2, 1, 2,
-			1, 1, 2,
-			1, 2, 1,
-		}},
-		{1048, false, 1, []int{
-			1, -1, -1,
-			-1, 1, -1,
-			2, 2, 1,
-		}},
-		{6093, false, 2, []int{
-			-1, 2, 1,
-			1, 2, 1,
-			-1, 2, -1,
-		}},
-		{9004, true, 1, []int{
-			2, 2, 1,
-			1, 2, 1,
-			2, 1, 1,
-		}},
-	}
-	for i, test := range tests {
-		n := i
-		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
-			matchTest(t, test.seed, test.draw, test.winner, test.cells)
+func TestMove(t *testing.T) {
+	for i, v := range cellTests() {
+		test := v
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			moveTest(t, test.seed, test.winner, test.draw, test.cells)
 		})
 	}
 }
 
-func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
-	t.Logf("seed: %d draw: %t winner: %d", seed, draw, winner)
+func TestMatch(t *testing.T) {
+	for i, v := range cellTests() {
+		test := v
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			matchTest(t, test.seed, test.winner, test.draw, test.cells)
+		})
+	}
+}
+
+func moveTest(t *testing.T, seed int64, winner int, draw bool, exp []int) {
+	t.Logf("seed: %d winner: %d draw: %t", seed, winner, draw)
+	r := rand.New(rand.NewSource(seed))
+	r1, r2 := rand.New(rand.NewSource(r.Int63())), rand.New(rand.NewSource(r.Int63()))
+	state := xoxo.NewState()
+	for i := 0; i < 2; i++ {
+		if err := state.Add("", "", strconv.Itoa(i), ""); err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+	}
+	for i := 0; state.Winner == 0 && !state.Draw; i = (i + 1) % 2 {
+		v := available(state)
+		if len(v) == 0 {
+			break
+		}
+		var rr *rand.Rand
+		switch {
+		case i%2 == 0:
+			rr = r1
+		default:
+			rr = r2
+		}
+		move := v[rr.Intn(len(v))]
+		if err := state.Move(strconv.Itoa(i), xoxo.NewMove(move[0], move[1])); err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+	}
+	if state.Winner != winner {
+		t.Errorf("expected winner: %d, got: %d", winner, state.Winner)
+	}
+	if state.Draw != draw {
+		t.Errorf("expected draw: %t, got: %t", draw, state.Draw)
+	}
+	cells := make([]int, 9)
+	copy(cells[0:3], state.Cells[0][:])
+	copy(cells[3:6], state.Cells[1][:])
+	copy(cells[6:9], state.Cells[2][:])
+	if !reflect.DeepEqual(cells, exp) {
+		t.Errorf("expected cells:\n%v\ngot:\n%v", exp, cells)
+	}
+	t.Logf("state: %s", state)
+}
+
+func matchTest(t *testing.T, seed int64, winner int, draw bool, cells []int) {
+	t.Logf("seed: %d winner: %d draw: %t", seed, winner, draw)
 	r := rand.New(rand.NewSource(seed))
 	s1, s2 := r.Int63(), r.Int63()
 	ctx, cancel, nk := nktest.WithCancel(context.Background(), t)
@@ -111,16 +132,16 @@ func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
 	t.Logf("proxy: %s", urlstr)
 	res := new(matchResult)
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(testMatch(t, ctx, s1, s2, urlstr, res))
-	eg.Go(testMatch(t, ctx, s1, s2, urlstr, nil))
+	eg.Go(runMatch(t, ctx, s1, s2, urlstr, res))
+	eg.Go(runMatch(t, ctx, s1, s2, urlstr, nil))
 	if err := eg.Wait(); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	if res.draw != draw {
-		t.Errorf("expected draw: %t, got: %t", draw, res.draw)
-	}
 	if res.winner != winner {
 		t.Errorf("expected winner: %d, got: %d", winner, res.winner)
+	}
+	if res.draw != draw {
+		t.Errorf("expected draw: %t, got: %t", draw, res.draw)
 	}
 	if !reflect.DeepEqual(res.cells, cells) {
 		t.Errorf("expected cells:\n%v\ngot:\n%v", cells, res.cells)
@@ -128,7 +149,7 @@ func matchTest(t *testing.T, seed int64, draw bool, winner int, cells []int) {
 	<-time.After(1500 * time.Millisecond)
 }
 
-func testMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, res *matchResult) func() error {
+func runMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, res *matchResult) func() error {
 	r1, r2 := rand.New(rand.NewSource(s1)), rand.New(rand.NewSource(s2))
 	return func() error {
 		cl, err := xoxo.Dial(ctx, xoxo.WithURL(urlstr), xoxo.WithLogf(t.Logf), xoxo.WithDebug())
@@ -145,20 +166,16 @@ func testMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, r
 			if state.State.PlayerTurn == 2 {
 				r = r2
 			}
-			var available [][]int
-			for i := 0; i < 3; i++ {
-				for j := 0; j < 3; j++ {
-					if state.State.Cells[i][j] == -1 {
-						available = append(available, []int{i, j})
-					}
-				}
+			v := available(state.State)
+			if len(v) == 0 {
+				break
 			}
-			n := r.Intn(len(available))
+			n := r.Intn(len(v))
 			t.Logf(
 				"player %d available %d, choosing move %d (%d, %d)",
-				state.State.PlayerTurn, len(available), n, available[n][0], available[n][1],
+				state.State.PlayerTurn, len(v), n, v[n][0], v[n][1],
 			)
-			if err := cl.Move(ctx, available[n][0], available[n][1]); err != nil {
+			if err := cl.Move(ctx, v[n][0], v[n][1]); err != nil {
 				return err
 			}
 		}
@@ -181,4 +198,51 @@ type matchResult struct {
 	draw   bool
 	winner int
 	cells  []int
+}
+
+type cellTest struct {
+	seed   int64
+	winner int
+	draw   bool
+	cells  []int
+}
+
+func available(state *xoxo.State) [][]int {
+	var v [][]int
+	for i := 0; i < 9; i++ {
+		if state.Cells[i/3][i%3] == -1 {
+			v = append(v, []int{i / 3, i % 3})
+		}
+	}
+	return v
+}
+
+func cellTests() []cellTest {
+	return []cellTest{
+		{102, 1, false, []int{ // p1 bottom to top
+			-1, 2, 1,
+			2, 1, -1,
+			1, 1, 2,
+		}},
+		{200, 0, true, []int{ // draw
+			2, 1, 2,
+			1, 1, 2,
+			1, 2, 1,
+		}},
+		{1048, 1, false, []int{ // p1 top to bottom
+			1, -1, -1,
+			-1, 1, -1,
+			2, 2, 1,
+		}},
+		{6093, 2, false, []int{ // p2 col 1
+			-1, 2, 1,
+			1, 2, 1,
+			-1, 2, -1,
+		}},
+		{9004, 1, false, []int{ // p1 col 2
+			2, 2, 1,
+			1, 2, 1,
+			2, 1, 1,
+		}},
+	}
 }

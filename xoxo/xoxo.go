@@ -72,35 +72,31 @@ func (s *State) Move(userId string, move Move) error {
 	case s.PlayerTurn != 1 && s.PlayerTurn != 2:
 		return fmt.Errorf("invalid player turn")
 	}
-	i, found := 0, false
+	i, p, found := 0, 0, false
 	for ; i < len(s.Players); i++ {
 		if s.Players[i].UserId == userId {
 			found = true
 			break
 		}
 	}
-	player := i + 1
-	switch {
+	switch p = i + 1; {
 	case !found:
 		return fmt.Errorf("unable to locate player with user id %q", userId)
-	case s.PlayerTurn != player:
-		return fmt.Errorf("it is not player %d's turn, it is player %d's turn", player, s.PlayerTurn)
-	}
-	// do move
-	switch player {
-	case 1:
-		s.PlayerTurn = 2
-	case 2:
-		s.PlayerTurn = 1
+	case s.PlayerTurn != p:
+		return fmt.Errorf("it is not player %d's turn, it is player %d's turn", p, s.PlayerTurn)
 	default:
-		return fmt.Errorf("invalid PlayerTurn %d (%d)", s.PlayerTurn, player)
+		s.Cells[row][col] = p
+		switch p {
+		case 1:
+			s.PlayerTurn = 2
+		case 2:
+			s.PlayerTurn = 1
+		}
 	}
-	s.Cells[row][col] = player
-	s.Winner, s.Draw = 0, false
 	// determine if there is a winner
 loop:
-	for p := 1; p <= 2; p++ {
-		for i := 0; i < 8; i++ {
+	for p, s.Winner = 1, 0; p <= 2; p++ {
+		for i = 0; i < 8; i++ {
 			if isWinner(p, s.Cells, coords[i]) {
 				s.Winner = p
 				break loop
@@ -108,12 +104,8 @@ loop:
 		}
 	}
 	// check draw
-	if s.Winner == 0 {
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
-				s.Draw = s.Draw && s.Cells[i][j] != -1
-			}
-		}
+	for i, s.Draw = 0, s.Winner == 0; s.Draw && i < 9; i++ {
+		s.Draw = s.Draw && s.Cells[i/3][i%3] != -1
 	}
 	if s.Winner != 0 || s.Draw {
 		s.PlayerTurn = -1
@@ -122,20 +114,6 @@ loop:
 }
 
 func (s *State) String() string {
-	v := make([]interface{}, 9)
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 3; j++ {
-			v[i*3+j] = getCellAsRune(i, j, s.Cells)
-		}
-	}
-	var str string
-	switch {
-	case s.Winner != 0:
-		str = fmt.Sprintf(" (winner: %d)", s.Winner)
-	case s.Draw:
-		str = " (draw)"
-	}
-	v = append(v, str)
 	p1, p2 := "(nil)", "(nil)"
 	if len(s.Players) > 0 {
 		p1 = s.Players[0].UserId
@@ -143,11 +121,23 @@ func (s *State) String() string {
 	if len(s.Players) > 1 {
 		p2 = s.Players[1].UserId
 	}
-	return fmt.Sprintf("<1: %s, 2: %s, turn: %d [%c%c%c,%c%c%c,%c%c%c]%s>", append([]interface{}{
-		p1,
-		p2,
-		s.PlayerTurn,
-	}, v...)...)
+	winner := -1
+	if s.Winner != 0 {
+		winner = s.Winner
+	}
+	v := make([]interface{}, 9)
+	for i := 0; i < 9; i++ {
+		v[i] = getCellAsRune(i/3, i%3, s.Cells)
+	}
+	return fmt.Sprintf(
+		"1:%s 2:%s turn:%d winner:%d draw:%t cells:[%c%c%c %c%c%c %c%c%c]",
+		append([]interface{}{
+			p1,
+			p2,
+			s.PlayerTurn,
+			winner,
+			s.Draw,
+		}, v...)...)
 }
 
 func getCellAsRune(i, j int, cells [][]int) rune {
