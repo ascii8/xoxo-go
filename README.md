@@ -45,7 +45,7 @@ $ DEBUG=1 go test -v
 
 ## Running the Module for use with Clients
 
-Rrun the module using `go test` from the repository root:
+Run the module using `go test` from the repository root:
 
 ```sh
 # change to the repository root
