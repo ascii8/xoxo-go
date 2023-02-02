@@ -40,28 +40,26 @@ func run(ctx context.Context, urlstr, key string, seed int64, count int) error {
 		for cl.Ready(ctx) && cl.Next(ctx) {
 			state := cl.State()
 			log.Printf("player turn %q (%d)", state.ActivePlayer.UserId, state.State.PlayerTurn)
-			var available [][]int
-			for i := 0; i < 3; i++ {
-				for j := 0; j < 3; j++ {
-					if state.State.Cells[i][j] == -1 {
-						available = append(available, []int{i, j})
-					}
+			var v [][]int
+			for i := 0; i < 9; i++ {
+				if state.State.Cells[i/3][i%3] == -1 {
+					v = append(v, []int{i / 3, i % 3})
 				}
 			}
-			n := r.Intn(len(available))
+			n := r.Intn(len(v))
 			log.Printf(
 				"player %d available %d, choosing move %d (%d, %d)",
-				state.State.PlayerTurn, len(available), n, available[n][0], available[n][1],
+				state.State.PlayerTurn, len(v), n, v[n][0], v[n][1],
 			)
-			if err := cl.Move(ctx, available[n][0], available[n][1]); err != nil {
+			if err := cl.Move(ctx, v[n][0], v[n][1]); err != nil {
 				return err
 			}
 		}
 		switch state := cl.State(); {
 		case state.State.Draw:
-			log.Printf("Game %d: was a draw!", i+1)
+			log.Printf("game %d: was a draw!", i+1)
 		default:
-			log.Printf("Game %d: player %d won!", i+1, state.State.Winner)
+			log.Printf("game %d: player %d won!", i+1, state.State.Winner)
 		}
 	}
 	<-time.After(2 * time.Second)
