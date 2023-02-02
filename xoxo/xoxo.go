@@ -149,10 +149,6 @@ func (s *State) String() string {
 	if len(s.Players) > 1 {
 		p2 = s.Players[1].UserId
 	}
-	winner := -1
-	if s.Winner != 0 {
-		winner = s.Winner.Int()
-	}
 	v := make([]interface{}, 9)
 	for i := 0; i < 9; i++ {
 		v[i] = getCellAsRune(i/3, i%3, s.Cells)
@@ -163,9 +159,19 @@ func (s *State) String() string {
 			p1,
 			p2,
 			s.PlayerTurn,
-			winner,
+			s.Winner.Int(),
 			s.Draw,
 		}, v...)...)
+}
+
+func (state *State) Available() [][]int {
+	var v [][]int
+	for i := 0; i < 9; i++ {
+		if state.Cells[i/3][i%3] == -1 {
+			v = append(v, []int{i / 3, i % 3})
+		}
+	}
+	return v
 }
 
 func getCellAsRune(i, j int, cells [][]int) rune {

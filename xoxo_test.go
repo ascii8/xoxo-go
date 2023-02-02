@@ -87,7 +87,7 @@ func moveTest(t *testing.T, seed int64, winner int, draw bool, exp []int) {
 		}
 	}
 	for i := 0; state.Winner == 0 && !state.Draw; i = (i + 1) % 2 {
-		v := available(state)
+		v := state.Available()
 		if len(v) == 0 {
 			break
 		}
@@ -166,7 +166,7 @@ func runMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, re
 			if state.State.PlayerTurn == 2 {
 				r = r2
 			}
-			v := available(state.State)
+			v := state.State.Available()
 			if len(v) == 0 {
 				break
 			}
@@ -235,14 +235,4 @@ func cellTests() []cellTest {
 			2, 1, 1,
 		}},
 	}
-}
-
-func available(state *xoxo.State) [][]int {
-	var v [][]int
-	for i := 0; i < 9; i++ {
-		if state.Cells[i/3][i%3] == -1 {
-			v = append(v, []int{i / 3, i % 3})
-		}
-	}
-	return v
 }

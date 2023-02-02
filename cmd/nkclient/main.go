@@ -36,16 +36,11 @@ func run(ctx context.Context, urlstr, key string, seed int64, count int) error {
 	if err := cl.Join(ctx); err != nil {
 		return err
 	}
-	for i := 0; i < count || count == -1; i++ {
+	for i := 0; count < 1 || i < count; i++ {
 		for cl.Ready(ctx) && cl.Next(ctx) {
 			state := cl.State()
 			log.Printf("player turn %q (%d)", state.ActivePlayer.UserId, state.State.PlayerTurn)
-			var v [][]int
-			for i := 0; i < 9; i++ {
-				if state.State.Cells[i/3][i%3] == -1 {
-					v = append(v, []int{i / 3, i % 3})
-				}
-			}
+			v := state.State.Available()
 			n := r.Intn(len(v))
 			log.Printf(
 				"player %d available %d, choosing move %d (%d, %d)",
