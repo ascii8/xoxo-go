@@ -32,7 +32,11 @@ func (w Winner) MarshalJSON() ([]byte, error) {
 	if w == 0 {
 		return []byte("false"), nil
 	}
-	return []byte(strconv.Itoa(int(w))), nil
+	return []byte(strconv.Itoa(w.Int())), nil
+}
+
+func (w Winner) Int() int {
+	return int(w)
 }
 
 type Player struct {
@@ -147,7 +151,7 @@ func (s *State) String() string {
 	}
 	winner := -1
 	if s.Winner != 0 {
-		winner = int(s.Winner)
+		winner = s.Winner.Int()
 	}
 	v := make([]interface{}, 9)
 	for i := 0; i < 9; i++ {

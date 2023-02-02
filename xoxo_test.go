@@ -103,7 +103,7 @@ func moveTest(t *testing.T, seed int64, winner int, draw bool, exp []int) {
 			t.Fatalf("expected no error, got: %v", err)
 		}
 	}
-	if state.Winner != winner {
+	if state.Winner.Int() != winner {
 		t.Errorf("expected winner: %d, got: %d", winner, state.Winner)
 	}
 	if state.Draw != draw {
@@ -181,7 +181,7 @@ func runMatch(t *testing.T, ctx context.Context, s1, s2 int64, urlstr string, re
 		}
 		if state := cl.State(); state != nil && res != nil {
 			res.draw = state.State.Draw
-			res.winner = state.State.Winner
+			res.winner = state.State.Winner.Int()
 			res.cells = make([]int, 9)
 			copy(res.cells[0:3], state.State.Cells[0][:])
 			copy(res.cells[3:6], state.State.Cells[1][:])
