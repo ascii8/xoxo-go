@@ -207,16 +207,6 @@ type cellTest struct {
 	cells  []int
 }
 
-func available(state *xoxo.State) [][]int {
-	var v [][]int
-	for i := 0; i < 9; i++ {
-		if state.Cells[i/3][i%3] == -1 {
-			v = append(v, []int{i / 3, i % 3})
-		}
-	}
-	return v
-}
-
 func cellTests() []cellTest {
 	return []cellTest{
 		{102, 1, false, []int{ // p1 bottom to top
@@ -245,4 +235,14 @@ func cellTests() []cellTest {
 			2, 1, 1,
 		}},
 	}
+}
+
+func available(state *xoxo.State) [][]int {
+	var v [][]int
+	for i := 0; i < 9; i++ {
+		if state.Cells[i/3][i%3] == -1 {
+			v = append(v, []int{i / 3, i % 3})
+		}
+	}
+	return v
 }
