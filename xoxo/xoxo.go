@@ -4,12 +4,36 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 const (
 	OpCodeMove  = 1
 	OpCodeState = 2
 )
+
+type Winner int
+
+func (w *Winner) UnmarshalJSON(buf []byte) error {
+	switch string(buf) {
+	case "1":
+		*w = 1
+	case "2":
+		*w = 2
+	case "false":
+		*w = 0
+	default:
+		return fmt.Errorf("invalid winner %q", buf)
+	}
+	return nil
+}
+
+func (w Winner) MarshalJSON() ([]byte, error) {
+	if w == 0 {
+		return []byte("false"), nil
+	}
+	return []byte(strconv.Itoa(int(w))), nil
+}
 
 type Player struct {
 	Node      string `json:"node,omitempty"`
@@ -22,7 +46,7 @@ type State struct {
 	Cells            [][]int  `json:"cells,omitempty"`
 	PlayerTurn       int      `json:"player_turn"`
 	Players          []Player `json:"players"`
-	Winner           int      `json:"winner,omitempty"`
+	Winner           Winner   `json:"winner,omitempty"`
 	Draw             bool     `json:"draw,omitempty"`
 	RematchCountdown int      `json:"rematch_countdown,omitempty"`
 }
@@ -98,7 +122,7 @@ loop:
 	for p, s.Winner = 1, 0; p <= 2; p++ {
 		for i = 0; i < 8; i++ {
 			if isWinner(p, s.Cells, coords[i]) {
-				s.Winner = p
+				s.Winner = Winner(p)
 				break loop
 			}
 		}
@@ -123,7 +147,7 @@ func (s *State) String() string {
 	}
 	winner := -1
 	if s.Winner != 0 {
-		winner = s.Winner
+		winner = int(s.Winner)
 	}
 	v := make([]interface{}, 9)
 	for i := 0; i < 9; i++ {
