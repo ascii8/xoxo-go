@@ -227,6 +227,18 @@ func (g *Game) layout() func(system.FrameEvent) {
 					material.Button(th, g.join, "Join").Layout,
 				)
 			}),
+			// connected label
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return layout.Inset{
+					Top:    10,
+					Bottom: 10,
+					Right:  10,
+					Left:   10,
+				}.Layout(
+					gtx,
+					material.Label(th, 18, g.connectedLabel).Layout,
+				)
+			}),
 		)
 		ev.Frame(gtx.Ops)
 	}
