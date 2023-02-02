@@ -38,6 +38,7 @@ cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohl
 cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RXyy7KQOVs=
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+eliasnaur.com/font v0.0.0-20220124212145-832bb8fc08c3 h1:djFprmHZgrSepsHAIRMp5UJn3PzsoTg9drI+BDmif5Q=
 fyne.io/fyne/v2 v2.3.0 h1:g9tPI3lyBK50IvyPbXqv2zI3JJ4uhMAffu89f3nX5PU=
 fyne.io/fyne/v2 v2.3.0/go.mod h1:odfJmbFnODiKn1MXdL44JR6CK+0v8lrmgdPlrUF6w0M=
 fyne.io/systray v1.10.1-0.20221115204952-d16a6177e6f1 h1:OiHw+bZAGEaSreHsA8dDkBOVJmSFzsNTOc/htpM+fOc=
@@ -49,6 +50,8 @@ gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 h1:AGDDxsJE1RpcXTAxPG2B4jrwVUJG
 gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2/go.mod h1:A8M0Cn5o+vY5LTMlnRoK3O5kG+rH0kWfJjeKd9QpBmQ=
 gioui.org/shader v1.0.6 h1:cvZmU+eODFR2545X+/8XucgZdTtEjR3QWW6W65b0q5Y=
 gioui.org/shader v1.0.6/go.mod h1:mWdiME581d/kV7/iEhLmUgUK5iZ09XR5XpduXzbePVM=
+gioui.org/x v0.0.0-20230201210254-e4e582af919b h1:0UZeCx641m+2dj4t3OTQqXfeLHqtEnr5g3Q3edkU6aQ=
+gioui.org/x v0.0.0-20230201210254-e4e582af919b/go.mod h1:kmHRtak7XgGZYYuqFgDBJ42PbQjPrV/xOpw9FLx3eVY=
 github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774 h1:SCbEWT58NSt7d2mcFdvxC9uyrdcTfvBbPLThhkDmXzg=
 github.com/Azure/azure-sdk-for-go v16.2.1+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
@@ -436,7 +439,6 @@ github.com/go-playground/validator/v10 v10.2.0 h1:KgJ0snyC2R9VXYN2rneOtQcw5aHQB1
 github.com/go-playground/validator/v10 v10.2.0/go.mod h1:uOYAAleCW8F/7oMFd6aG0GOhaH6EGOAJShg8Id5JGkI=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/go-test/deep v1.0.8 h1:TDsG77qcSprGbC6vTN8OuXp5g+J+b5Pcguhf7Zt61VM=
-github.com/go-text/typesetting v0.0.0-20221212183139-1eb938670a1f h1:cWE//ddvZ7bZAYGtNi3+SPGvUFTeTRUL/TQ9LUnQOP0=
 github.com/go-text/typesetting v0.0.0-20221212183139-1eb938670a1f/go.mod h1:/cmOXaoTiO+lbCwkTZBgCvevJpbFsZ5reXIpEJVh5MI=
 github.com/go-text/typesetting v0.0.0-20221214153724-0399769901d5 h1:iOA0HmtpANn48hX2nlDNMu0VVaNza35HJG0WeetBVzQ=
 github.com/go-text/typesetting v0.0.0-20221214153724-0399769901d5/go.mod h1:/cmOXaoTiO+lbCwkTZBgCvevJpbFsZ5reXIpEJVh5MI=
@@ -885,8 +887,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUAtL9R8=
 github.com/rs/xid v1.4.0 h1:qd7wPTDkN6KQx2VmMBLrpHkiyQwgFXRnkOLacUiaSNY=
 github.com/rs/xid v1.4.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
-github.com/rs/zerolog v1.28.0 h1:MirSo27VyNi7RJYP3078AA1+Cyzd2GB66qy3aUHvsWY=
-github.com/rs/zerolog v1.28.0/go.mod h1:NILgTygv/Uej1ra5XxGf82ZFSLk58MFGAUS2o6usyD0=
+github.com/rs/zerolog v1.29.0 h1:Zes4hju04hjbvkVkOhdl2HpZa+0PmVwigmo8XoORE5w=
+github.com/rs/zerolog v1.29.0/go.mod h1:NILgTygv/Uej1ra5XxGf82ZFSLk58MFGAUS2o6usyD0=
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=

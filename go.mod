@@ -4,13 +4,15 @@ go 1.19
 
 require (
 	fyne.io/fyne/v2 v2.3.0
+	gioui.org v0.0.0-20230128030432-db6b4de0f71b
+	gioui.org/x v0.0.0-20230201210254-e4e582af919b
 	github.com/ascii8/nakama-go v0.5.1
 	github.com/ascii8/nktest v0.9.9
 	github.com/google/uuid v1.3.0
 	github.com/hajimehoshi/ebiten/v2 v2.5.0-alpha.12.0.20230125062506-0c76a0cbd712
 	github.com/heroiclabs/nakama-common v1.26.0
 	github.com/rs/xid v1.4.0
-	github.com/rs/zerolog v1.28.0
+	github.com/rs/zerolog v1.29.0
 	golang.org/x/exp v0.0.0-20230113213754-f9f960f08ad4
 	golang.org/x/image v0.3.0
 	golang.org/x/sync v0.1.0
@@ -18,7 +20,6 @@ require (
 
 require (
 	fyne.io/systray v1.10.1-0.20221115204952-d16a6177e6f1 // indirect
-	gioui.org v0.0.0-20230128030432-db6b4de0f71b // indirect
 	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
 	gioui.org/shader v1.0.6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
