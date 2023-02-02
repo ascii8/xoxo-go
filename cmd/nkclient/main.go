@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	urlstr := flag.String("addr", "http://127.0.0.1:7350", "xoxo host")
+	urlstr := flag.String("url", "http://127.0.0.1:7350", "xoxo host")
 	key := flag.String("key", "xoxo-go_server", "server key")
 	seed := flag.Int64("seed", 0, "seed")
 	count := flag.Int("count", 3, "game count")

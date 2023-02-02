@@ -14,7 +14,7 @@ import (
 
 func main() {
 	debug := flag.Bool("debug", true, "enable debug")
-	urlstr := flag.String("addr", "http://127.0.0.1:7350", "xoxo host")
+	urlstr := flag.String("url", "http://127.0.0.1:7350", "xoxo host")
 	key := flag.String("key", "xoxo-go_server", "server key")
 	flag.Parse()
 	if err := run(context.Background(), *debug, *urlstr, *key); err != nil {
