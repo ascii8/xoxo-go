@@ -97,17 +97,40 @@ $ go build ./cmd/fyneclient && ./fyneclient
 
 ## Using the Fyne client (WASM)
 
-Build and run the Fyne client, as a Desktop client:
+Build and run the Fyne client, as a WASM client:
 
 ```sh
-# install fyne build tool
-$ go install fyne.io/fyne/v2/cmd/fyne@latest
+# change to the repository root
+$ cd /path/to/xoxo-go
 
-# change to the repository's cmd/fyneclient directory
-$ cd /path/to/xoxo-go/cmd/fyneclient
+# build wasm and run local webserver
+$ go run github.com/hajimehoshi/wasmserve@latest ./cmd/fyneclient
+```
 
-# build/run the Fyne client
-$ fyne serve --port 8080 --target wasm
+Then open [http://127.0.0.1:8080](http://127.0.0.1:8080) in a browser.
+
+## Using the Gio client (Desktop)
+
+Build and run the Gio client, as a Desktop client:
+
+```sh
+# change to the repository root
+$ cd /path/to/xoxo-go
+
+# build/run the Gio client
+$ go build ./cmd/gioclient && ./gioclient
+```
+
+## Using the Gio client (WASM)
+
+Build and run the Gio client, as a WASM client:
+
+```sh
+# change to the repository root
+$ cd /path/to/xoxo-go
+
+# build wasm and run local wgioserver
+$ go run github.com/hajimehoshi/wasmserve@latest ./cmd/gioclient
 ```
 
 Then open [http://127.0.0.1:8080](http://127.0.0.1:8080) in a browser.
