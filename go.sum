@@ -119,10 +119,10 @@ github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/ascii8/nakama-go v0.5.1 h1:KXsEVZrNMjeEGTffKNZ2AJaLuPcKWEYu35QCWO/hJkU=
-github.com/ascii8/nakama-go v0.5.1/go.mod h1:KAvM2F/6pEkDdCPMW0CADSs185DqZr7cqdDl5Hs6wrc=
-github.com/ascii8/nktest v0.9.9 h1:xL24F6XVZRDzWmdB3AUk80LdLlLFiA6dWea4OmyMGKI=
-github.com/ascii8/nktest v0.9.9/go.mod h1:9NL5VHfbqSEoPvbi+XkelC4H8fuJvfXAjxCqHp8RcxE=
+github.com/ascii8/nakama-go v0.5.2 h1:kM6626+67Xgg6BFQ721UtjqZ9nBEqqQwOtdHxKG77HA=
+github.com/ascii8/nakama-go v0.5.2/go.mod h1:q9FbCFsYAIPIv1jev4cRFNAAYiTiTdO8UdVxfxBPxTg=
+github.com/ascii8/nktest v0.9.10 h1:kehDnLDhG+kgkPXDlMct81dQYf1Ph9GiFSs17eDtgYI=
+github.com/ascii8/nktest v0.9.10/go.mod h1:9NL5VHfbqSEoPvbi+XkelC4H8fuJvfXAjxCqHp8RcxE=
 github.com/aws/aws-sdk-go v1.15.11/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/benoitkugler/pstokenizer v1.0.0/go.mod h1:l1G2Voirz0q/jj0TQfabNxVsa8HZXh/VMxFSRALWTiE=
 github.com/benoitkugler/textlayout v0.3.0 h1:2ehWXEkgb6RUokTjXh1LzdGwG4dRP6X3dqhYYDYhUVk=

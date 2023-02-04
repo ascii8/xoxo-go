@@ -6,8 +6,8 @@ require (
 	fyne.io/fyne/v2 v2.3.0
 	gioui.org v0.0.0-20230128030432-db6b4de0f71b
 	gioui.org/x v0.0.0-20230201210254-e4e582af919b
-	github.com/ascii8/nakama-go v0.5.1
-	github.com/ascii8/nktest v0.9.9
+	github.com/ascii8/nakama-go v0.5.2
+	github.com/ascii8/nktest v0.9.10
 	github.com/google/uuid v1.3.0
 	github.com/hajimehoshi/ebiten/v2 v2.5.0-alpha.12.0.20230125062506-0c76a0cbd712
 	github.com/heroiclabs/nakama-common v1.26.0
