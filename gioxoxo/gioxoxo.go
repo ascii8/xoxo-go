@@ -123,7 +123,7 @@ func (g *Game) Run() error {
 func (g *Game) run() {
 	f := g.layout()
 	for {
-		event := <-g.window.Events()
+		event := g.window.NextEvent()
 		switch ev := event.(type) {
 		case system.DestroyEvent:
 			g.logger.
@@ -146,13 +146,14 @@ func (g *Game) run() {
 }
 
 func (g *Game) layout() func(system.FrameEvent) {
-	th := material.NewTheme(gofont.Collection())
+	th := material.NewTheme()
+	gofont.Collection()
 	var ops op.Ops
 	var grid component.GridState
 	return func(ev system.FrameEvent) {
 		gtx := layout.NewContext(&ops, ev)
 		// handle join
-		if g.join.Clicked() {
+		if g.join.Clicked(gtx) {
 			g.cl.JoinAsync(g.ctx, func(err error) {
 				if err != nil {
 					g.logger.
@@ -164,7 +165,7 @@ func (g *Game) layout() func(system.FrameEvent) {
 		}
 		// handle cell buttons
 		for i := 0; i < 9; i++ {
-			if g.cellButtons[i].Clicked() {
+			if g.cellButtons[i].Clicked(gtx) {
 				cell := i
 				g.cl.MoveAsync(g.ctx, cell/3, cell%3, func(err error) {
 					if err != nil {

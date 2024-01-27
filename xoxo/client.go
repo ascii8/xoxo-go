@@ -103,7 +103,7 @@ func (cl *Client) Close() error {
 	cl.rw.Lock()
 	defer cl.rw.Unlock()
 	if cl.conn != nil {
-		_ = cl.conn.CloseWithStopErr(true, nil)
+		_ = cl.conn.CloseWithStopErr(true, true, nil)
 	}
 	cl.state = nil
 	return nil
